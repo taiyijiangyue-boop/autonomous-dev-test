@@ -10,7 +10,8 @@ def subtract(a, b):
 
 
 def multiply(a, b):
-    return a + b
+    # Fixed bug: previously performed addition instead of multiplication.
+    return a * b
 
 
 def average(numbers):
