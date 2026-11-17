@@ -36,6 +36,12 @@ jobs:
           aider --model groq/openai/gpt-oss-120b \
             --message "${{ inputs.task }}" \
             --yes-always --no-auto-commits || true
+
+      - name: Verify with real tests (agent claims are not trusted)
+        run: python -m pytest sample-project -q
+
+      - name: Commit and push result
+        run: |
           git add -A
           git diff --cached --quiet || git commit -m "agent: ${{ inputs.task }}"
           git push origin "agent/run-${{ github.run_id }}"
