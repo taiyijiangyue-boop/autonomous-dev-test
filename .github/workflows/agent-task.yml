@@ -1,0 +1,41 @@
+name: agent-task
+
+# 手動実行専用。AIエージェントに1タスクだけ実行させ、結果をブランチにコミットして返す。
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "エージェントに実行させるタスク（1つだけ、具体的に）"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install tools
+        run: pip install aider-chat pytest
+
+      - name: Run agent (Aider one-shot, Groq)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          git config user.name "autonomous-agent"
+          git config user.email "agent@localhost"
+          git checkout -b "agent/run-${{ github.run_id }}"
+          aider --model groq/openai/gpt-oss-120b \
+            --message "${{ inputs.task }}" \
+            --yes-always --no-auto-commits || true
+          git add -A
+          git diff --cached --quiet || git commit -m "agent: ${{ inputs.task }}"
+          git push origin "agent/run-${{ github.run_id }}"
